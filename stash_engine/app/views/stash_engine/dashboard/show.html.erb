@@ -11,15 +11,14 @@
 -->
 
 <!-- If the user has not yet accepted the Terms of Service, they should. -->
-<% if current_user.terms_accepted_at == nil %>
-	<div class="c-terms-of-service">
-		<p>User hasn't accepted the Terms of Service yet.</p>
-	</div>
-<% end %>
-
 <% if current_user.terms_accepted_at %>
 	<div class="c-terms-of-service">
 		<p>User has accepted the Terms of Service.</p>
+	</div>
+<% else %>
+	<div class="c-terms-of-service">
+		<p>User has not accepted the Terms of Service. NEED TO PUT HTML HERE! </p>
+		<%= button_to 'Yes. I accept the Terms of Service.', { :terms_accepted => true} %>
 	</div>
 <% end %>
 

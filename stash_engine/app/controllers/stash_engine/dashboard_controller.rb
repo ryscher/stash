@@ -4,7 +4,9 @@ module StashEngine
   class DashboardController < ApplicationController
     before_action :require_login, only: [:show]
 
-    def show; end
+    def show
+      current_user.terms_accepted_at = '2018-8-19' if params.key?(:accept_terms)
+    end
 
     def metadata_basics; end
 
