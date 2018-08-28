@@ -3,9 +3,12 @@ require_dependency 'stash_engine/application_controller'
 module StashEngine
   class DashboardController < ApplicationController
     before_action :require_login, only: [:show]
+    before_action :require_terms_accepted, only: [:show]
 
-    def show
-      current_user.terms_accepted_at = '2018-8-19' if params.key?(:accept_terms)
+    def accept_terms
+      current_user.terms_accepted_at = Time.new
+      current_user.save
+      render 'stash_engine/dashboard/show'
     end
 
     def metadata_basics; end

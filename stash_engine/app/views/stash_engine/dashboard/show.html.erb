@@ -10,19 +10,6 @@
 <% end %>
 -->
 
-<!-- If the user has not yet accepted the Terms of Service, they should. -->
-<% if current_user.terms_accepted_at %>
-	<div class="c-terms-of-service">
-		<p>User has accepted the Terms of Service.</p>
-	</div>
-<% else %>
-	<div class="c-terms-of-service">
-		<p>User has not accepted the Terms of Service. NEED TO PUT HTML HERE! </p>
-		<%= button_to 'Yes. I accept the Terms of Service.', { :terms_accepted => true} %>
-	</div>
-<% end %>
-
-
 <div class="c-datasets-heading">
 	<h1 class="c-datasets-heading__heading o-heading__level1">My Datasets</h1>
 	<div>

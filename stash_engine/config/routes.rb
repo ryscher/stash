@@ -58,15 +58,15 @@ StashEngine::Engine.routes.draw do
   match 'auth/:provider/callback', :to => 'sessions#callback', :via => [:get, :post]
   match 'auth/migrate/mail', :to => 'dashboard#migrate_data_mail', :via => [:get]
   match 'auth/migrate/code', :to => 'dashboard#migrate_data', :via => [:get]
+  match 'terms/view', :to => 'dashboard#view_terms', :via => [:get, :post]
+  match 'terms/accept', :to => 'dashboard#accept_terms', :via => [:get, :post]
 
-# Testing different route types
-#  post 'dashboard', to: 'dashboard#show', as: 'accept_terms'
-#  match 'auth/accept/terms', :to => 'dashboard#show', :via => [:post]
-#  get 'accept_terms', to: 'dashboard#show'
+#  post 'accept/terms', to: 'dashboard#show'
+
 
 
   get 'auth/failure', :to => redirect('/')
-  get 'sessions/destroy', :to => 'sessions#destroy'
+  match 'sessions/destroy', :to => 'sessions#destroy', :via => [:get, :post]
   get 'sessions/choose_login', to: 'sessions#choose_login', as: 'choose_login'
   get 'sessions/choose_sso', to: 'sessions#choose_sso', as: 'choose_sso'
   post 'sessions/no_partner', to: 'sessions#no_partner', as: 'no_partner'
