@@ -7,7 +7,7 @@
 **Stash** is an application framework for research data publication and
 preservation. Stash enables individual scholars to:
 
-1. Prepare datasets for curation by reviewing best practice guidance for
+1. Prepare datasets for curation by reviewing best practice guidance for 
    the creation or acquisition of research data.
 2. Select data for curation through local file browse or drag-and-drop
    operation.
