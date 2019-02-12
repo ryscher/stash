@@ -114,7 +114,8 @@ module StashEngine
 
       # only ask for payment if there is no previous invoice and
       # if the stats has been changed to a published status
-      return unless resource.identifier.invoice_id.nil? &&
+      return unless !resource.identifier.nil? &&
+                    resource.identifier.invoice_id.nil? &&
                     (status == 'Published' || status == 'Embargoed') &&
                     StashEngine.app.payments.service == 'stripe'      
 
