@@ -161,7 +161,7 @@ module StashEngine
     end
 
     def publication_issn
-      StashEngine::InternalDatum.find_by(identifier_id: id, data_type: 'publicationISSN')&.value
+      internal_data.find_by(data_type: 'publicationISSN')&.value
     end
 
     def publication_name
@@ -180,7 +180,18 @@ module StashEngine
     end
 
     def fee_waiver_country?
-      false
+      APP_CONFIG.fee_waiver_countries&.include?(submitter_country)
+    end
+
+    def submitter_country
+      affil = latest_resource&.authors&.first&.affiliation&.long_name
+      return if affil.nil?
+      url = 'https://api.ror.org/organizations'
+      results = HTTParty.get(url,
+                             query: { query: affil },
+                             headers: { 'Content-Type' => 'application/json' })
+
+      results.parsed_response['items'].first['country']['country_name']
     end
 
     private
