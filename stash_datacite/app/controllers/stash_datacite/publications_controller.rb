@@ -1,37 +1,51 @@
 require_dependency 'stash_datacite/application_controller'
 require 'httparty'
+require 'stash/import/cross_ref'
 
 module StashDatacite
   class PublicationsController < ApplicationController
     # include HTTParty
-
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def update
       @se_id = StashEngine::Identifier.find(params[:internal_datum][:identifier_id])
-      @pub_issn = StashEngine::InternalDatum.find_or_create_by(stash_identifier: @se_id, data_type: 'publicationISSN')
-      @msid = StashEngine::InternalDatum.find_or_create_by(stash_identifier: @se_id, data_type: 'manuscriptNumber')
-      @doi = StashEngine::InternalDatum.find_or_create_by(stash_identifier: @se_id, data_type: 'publicationDOI')
-      issn = params[:internal_datum][:publication_issn]
-      msid = params[:internal_datum][:msid]
-      doi = params[:internal_datum][:doi]
-      @pub_issn.update(value: issn) unless issn.blank?
-      @msid.update(value: msid) unless msid.blank?
-      @doi.update(value: doi) unless doi.blank?
+      save_form_to_internal_data
       respond_to do |format|
         format.js do
           if params[:internal_datum][:do_import] == 'true'
             # take action to do the actual import and reload the page with javascript
-            update_metadata
-            render 'update' # just the standard update in the associated view directory
+            @resource = @se_id.latest_resource
+            if @doi.value.blank? && !@msid.value.blank?
+              update_manuscript_metadata
+            else
+              update_doi_metadata
+            end
           else
             render template: 'stash_datacite/shared/update.js.erb'
           end
         end
       end
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:enable
 
-    def update_metadata
+    # rubocop:disable Metrics/AbcSize
+    def save_form_to_internal_data
+      @pub_issn = StashEngine::InternalDatum.where(stash_identifier: @se_id, data_type: 'publicationISSN').first_or_create
+      @pub_issn.update(value: params[:internal_datum][:publication_issn]) unless params[:internal_datum][:publication_issn].blank?
+
+      @msid = StashEngine::InternalDatum.where(stash_identifier: @se_id, data_type: 'manuscriptNumber').first_or_create
+      @msid.update(value: params[:internal_datum][:msid]) unless params[:internal_datum][:msid].blank?
+
+      @doi = StashEngine::InternalDatum.where(stash_identifier: @se_id, data_type: 'publicationDOI').first_or_create
+      @doi.update(value: params[:internal_datum][:doi]) unless params[:internal_datum][:doi].blank?
+    end
+    # rubocop:enable Metrics/AbcSize
+
+    # rubocop:disable Lint/UnreachableCode
+    def update_manuscript_metadata
+      # this all needs rework, but waiting on new api
+      @error = 'Could not retrieve manuscript data.'
+      return
+
+      # the rest of this is just here temporarily not sure if Ryan's new api will be like this or different
       pub_issn_only = @pub_issn.value
       msid_only = @msid.value
       body = { dryadDOI: 'doi:' + @se_id.identifier,
@@ -42,6 +56,24 @@ module StashDatacite
                               query: { access_token: APP_CONFIG.old_dryad_access_token },
                               body: body,
                               headers: { 'Content-Type' => 'application/json' })
+      render 'update' # just the standard update in the associated view directory
+    end
+    # rubocop:enable Lint/UnreachableCode
+
+    def update_doi_metadata
+      if @doi.value.blank?
+        @error = 'Please enter a DOI to import metadata'
+        return
+      end
+      works = Serrano.works(ids: @doi.value)
+      if !works.is_a?(Array) || works.first['message'].blank?
+        @error = "We couldn't obtain information from CrossRef about this DOI"
+        return
+      end
+      xr_import = Stash::Import::CrossRef.new(resource: @resource, serrano_message: works.first['message'])
+      xr_import.populate
+    rescue Serrano::NotFound, Serrano::BadGateway, Serrano::Error, Serrano::GatewayTimeout, Serrano::InternalServerError, Serrano::ServiceUnavailable
+      @error = "We couldn't retrieve information from CrossRef about this DOI"
     end
   end
 end
