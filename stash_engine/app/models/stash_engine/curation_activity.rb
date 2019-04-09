@@ -127,7 +127,6 @@ module StashEngine
       idg.update_identifier_metadata!
 
       # Send out emails now that the citation has been registered
-      email_author if published?
       email_orcid_invitations if published?
     end
 
