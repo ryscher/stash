@@ -19,10 +19,10 @@ module StashEngine # TODO: are we testing Author or Affiliation? (Or AuthorPatch
 
     describe 'scopes' do
       describe :affiliation_filled do
-        it 'includes affiliations w/short name'
-        it 'includes affiliations w/long name'
-        it 'includes affiliations w/both'
-        it 'excludes affiliations w/neither'
+        # it 'includes affiliations w/short name'
+        # it 'includes affiliations w/long name'
+        # it 'includes affiliations w/both'
+        # it 'excludes affiliations w/neither'
       end
     end
 
