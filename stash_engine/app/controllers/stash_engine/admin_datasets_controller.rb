@@ -20,6 +20,7 @@ module StashEngine
       @seven_day_stats = Stats.new(tenant_id: my_tenant_id, since: (Time.new - 7.days))
       @resources = build_table_query
       @publications = InternalDatum.where(data_type: 'publicationName').order(:value).pluck(:value).uniq
+      @pub_name = params[:publication_name]
       respond_to do |format|
         format.html
         format.csv
