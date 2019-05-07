@@ -85,11 +85,17 @@ module StashApi
     end
 
     def record_published_date(resource)
+      # if it was already published, don't update the date
+      return if resource.publication_date.present? && !resource.current_curation_activity.embargoed?
+
       publish_date = params[:curation_activity][:created_at] || Time.now
       resource.update!(publication_date: publish_date)
     end
 
     def record_embargoed_date(resource)
+      # if it was already published, don't update the date
+      return if resource.publication_date.present?
+
       embargo_date = (params[:curation_activity][:created_at]&.to_date || Date.today) + 1.year
       resource.update!(publication_date: embargo_date)
     end
