@@ -2,8 +2,6 @@ module Stash
   module Import
     class CrossRef
 
-      include Stash::Organization::Ror
-
       def initialize(resource:, serrano_message:)
         @resource = resource
         @sm = serrano_message # which came form crossref (x-ref)
@@ -34,7 +32,8 @@ module Stash
           affil_name = (xr_author['affiliation']&.first ? xr_author['affiliation'].first['name'] : nil)
 
           # If the affiliation was provided try looking up its ROR id
-          author.affiliation = StashDatacite::Affiliation.find_or_create_by(long_name: affil_name) if affil_name.present?
+          author.affiliation = StashDatacite::Affiliation.from_long_name(affil_name) if affil_name.present?
+          author.save if affil_name.present?
         end
       end
 
