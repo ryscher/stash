@@ -19,6 +19,9 @@ module StashEngine
       @all_stats = Stats.new
       @seven_day_stats = Stats.new(tenant_id: my_tenant_id, since: (Time.new - 7.days))
       @resources = build_table_query
+      # If no records were found and a search parameter was specified, requery with
+      # a ful text search to find partial word matches
+      @resources = build_table_query(true) if @resources.empty? && params[:q].present? && params[:q].length > 4
       @publications = InternalDatum.where(data_type: 'publicationName').order(:value).pluck(:value).uniq
       @pub_name = params[:publication_name]
       respond_to do |format|
@@ -66,6 +69,7 @@ module StashEngine
       respond_to do |format|
         format.js do
           @resource = Resource.find(params[:id])
+          @resource.current_editor_id = current_user.id
           decipher_curation_activity
           @resource.publication_date = @pub_date
           @resource.curation_activities << CurationActivity.create(user_id: current_user.id, status: @status,
@@ -106,20 +110,20 @@ module StashEngine
          sort_column_definition('author', 'stash_engine_authors', %w[author_last_name author_first_name]),
          sort_column_definition('doi', 'stash_engine_identifiers', %w[identifier]),
          sort_column_definition('last_modified', 'stash_engine_curation_activities', %w[updated_at]),
-         sort_column_definition('modified_by', 'stash_engine_users', %w[last_name first_name]),
+         sort_column_definition('editor', 'stash_engine_users', %w[last_name first_name]),
          sort_column_definition('size', 'stash_engine_identifiers', %w[storage_size]),
          sort_column_definition('publication_date', 'stash_engine_resources', %w[publication_date])]
       )
       @sort_column = sort_table.sort_column(params[:sort], params[:direction])
     end
 
-    def build_table_query
+    def build_table_query(full_table_scan = false)
       # Retrieve the ids of the all the latest Resources
       resource_ids = Resource.latest_per_dataset.pluck(:id)
       ca_ids = Resource.latest_curation_activity_per_resource.collect { |i| i[:curation_activity_id] }
 
       resources = Resource.joins(:identifier, :authors, :current_resource_state, :curation_activities)
-        .includes(:authors, :current_resource_state, identifier: :internal_data, curation_activities: :user)
+        .includes(:authors, :current_resource_state, :curation_activities, :editor, identifier: :internal_data)
         .where(stash_engine_resources: { id: resource_ids })
         .where(stash_engine_curation_activities: { id: ca_ids })
 
@@ -127,7 +131,8 @@ module StashEngine
       resources = resources.where(stash_engine_resources: { tenant_id: current_user.tenant_id }) unless current_user.role == 'superuser'
 
       # Add any filters, sorots, searches and pagination
-      resources = add_searches(query_obj: resources)
+      resources = add_searches(query_obj: resources) unless full_table_scan
+      resources = add_full_table_scan(query_obj: resources) if full_table_scan
       resources = add_filters(query_obj: resources)
       resources.order(@sort_column.order).page(@page).per(@page_size)
     end
@@ -136,7 +141,13 @@ module StashEngine
       # We'll have to play with this search to get it to be reasonable with the insane interface so that it narrows to a small enough
       # set so that it is useful to people for finding something and a large enough set to have what they want without hunting too long.
       # It doesn't really support sorting by relevance because of the other sorts.
-      query_obj = query_obj.where('MATCH(stash_engine_identifiers.search_words) AGAINST(?) > 0.5', params[:q]) unless params[:q].blank?
+      query_obj = query_obj.where('MATCH(stash_engine_identifiers.search_words) AGAINST(?) > 05', params[:q]) unless params[:q].blank?
+      query_obj
+    end
+
+    def add_full_table_scan(query_obj:)
+      # Do a table scan (inefficient but necessary for partial word search)
+      query_obj = query_obj.where('stash_engine_identifiers.search_words LIKE ?', "%#{params[:q]}%") unless params[:q].blank?
       query_obj
     end
 
