@@ -10,8 +10,8 @@ module StashApi
 
     include SubmissionMixin
 
-    before_action :require_json_headers, only: %i[show create index update]
-    before_action -> { require_stash_identifier(doi: params[:id]) }, only: %i[show download]
+    before_action :require_json_headers, only: %i[show create index update destroy]
+    before_action -> { require_stash_identifier(doi: params[:id]) }, only: %i[show download destroy]
     before_action :setup_identifier_and_resource_for_put, only: %i[update set_internal_datum add_internal_datum]
     before_action :doorkeeper_authorize!, only: %i[create update]
     before_action :require_api_user, only: %i[create update]
@@ -42,6 +42,15 @@ module StashApi
       end
     end
 
+    # DELETE /datasets/<id>
+    def destroy
+      ds = Dataset.new(identifier: @stash_identifier.to_s)
+      @stash_identifier.destroy
+      respond_to do |format|
+        format.json { render json: @stash_identifier }
+      end
+    end
+    
     # get /datasets
     def index
       ds_query = StashEngine::Identifier.user_viewable(user: @user) # this limits to a user's list based on their role/permissions (or public ones)
