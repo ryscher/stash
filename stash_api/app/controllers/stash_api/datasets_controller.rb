@@ -44,13 +44,12 @@ module StashApi
 
     # DELETE /datasets/<id>
     def destroy
-      ds = Dataset.new(identifier: @stash_identifier.to_s)
       @stash_identifier.destroy
       respond_to do |format|
         format.json { render json: @stash_identifier }
       end
     end
-    
+
     # get /datasets
     def index
       ds_query = StashEngine::Identifier.user_viewable(user: @user) # this limits to a user's list based on their role/permissions (or public ones)
