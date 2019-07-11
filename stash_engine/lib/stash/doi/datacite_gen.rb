@@ -51,7 +51,7 @@ module Stash
       end
 
       def validate_response(response:, operation:)
-        raise DataciteError, "DataCite failed to #{operation} for resource #{resource.id}" unless response.status == 201
+        raise DataciteError, "DataCite failed to #{operation} for resource #{resource.id} - Status: #{response.status}" unless response.status == 201
       end
 
     end
