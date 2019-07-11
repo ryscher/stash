@@ -53,7 +53,8 @@ module StashEngine
     # ------------------------------------------
     # When the status is published/embargoed send to Stripe and DataCite
     after_create :submit_to_datacite, :update_solr, :submit_to_stripe,
-                 if: proc { |ca| (ca.published? || ca.embargoed?) && latest_curation_status_changed? }
+                 if: proc { |ca| !ca.resource.skip_datacite_update? && (ca.published? || ca.embargoed?) &&
+                                 latest_curation_status_changed? }
 
     # Email the primary author when submitted, peer_review, published or embargoed
     after_create :email_author,
