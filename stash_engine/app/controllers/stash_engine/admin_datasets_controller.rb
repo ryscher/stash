@@ -67,6 +67,8 @@ module StashEngine
       end
     end
 
+    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable Metrics/MethodLength
     def curation_activity_change
       respond_to do |format|
         format.js do
@@ -83,7 +85,7 @@ module StashEngine
           rescue Stash::Doi::DataciteError
             # Datacite had a submission error (often due to them onlly hanging on to test DOIs for a short
             # period of time), so disable datacite submission and try again
-            logger.error "Unable to send metadata to Datacite for #{@resource.identifier.to_s}"
+            logger.error "Unable to send metadata to Datacite for #{@resource.identifier}"
             @resource.update(skip_datacite_update: true)
             CurationActivity.create(user_id: current_user.id, status: @status, resource_id: @resource.id,
                                     note: params[:resource][:curation_activity][:note])
@@ -93,6 +95,8 @@ module StashEngine
         end
       end
     end
+    # rubocop:enable Metrics/AbcSize
+    # rubocop:enable Metrics/MethodLength
 
     # show curation activities for this item
     def activity_log
