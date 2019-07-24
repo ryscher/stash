@@ -76,8 +76,7 @@ namespace :identifiers do
   task embargo_datasets: :environment do
     now = Date.today
     p "Embargoing legacy records with a resource whose publication_date >= '#{now}'"
-    StashEngine::Resource.joins(:current_curation_activity)
-      .includes(:current_curation_activity)
+    StashEngine::Resource.joins(:curation_activities).includes(:curation_activities)
       .where('stash_engine_curation_activities.status != ?', 'embargoed')
       .where('stash_engine_resources.publication_date >= ?', now).each do |r|
 
@@ -99,8 +98,7 @@ namespace :identifiers do
   task publish_datasets: :environment do
     now = Date.today
     p "Publishing resources whose publication_date <= '#{now}'"
-    StashEngine::Resource.joins(:current_curation_activity)
-      .includes(:current_curation_activity)
+    StashEngine::Resource.joins(:curation_activities).includes(:curation_activities)
       .where('stash_engine_curation_activities.status != ?', 'published')
       .where('stash_engine_resources.publication_date <= ?', now).each do |r|
 
@@ -142,7 +140,7 @@ namespace :identifiers do
 
   desc 'populate publicationName'
   task load_publication_names: :environment do
-    p "Searching CrossRef and the Journal API for publication names: #{Time.now}"
+    p "Searching CrossRef and the Journal API for publication names: #{Time.now.utc}"
     already_loaded_ids = StashEngine::InternalDatum.where(data_type: 'publicationName').pluck(:identifier_id).uniq
     unique_issns = {}
     StashEngine::InternalDatum.where(data_type: 'publicationISSN').where.not(identifier_id: already_loaded_ids).each do |datum|
@@ -165,7 +163,7 @@ namespace :identifiers do
         current_resource.submit_to_solr if current_resource.present?
       end
     end
-    p "Finished: #{Time.now}"
+    p "Finished: #{Time.now.utc}"
   end
 
 end

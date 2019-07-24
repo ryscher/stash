@@ -12,7 +12,6 @@ module Stash
       # This domain they say is what I should use, but it returns blank strings and no json
       # BASE_URL = 'https://api.test.datacite.org/events'.freeze
       BASE_URL = 'https://api.datacite.org/events'.freeze
-      EMAIL = 'scott.fisher@ucop.edu'.freeze
       DATACITE_URL = 'https://doi.org/'.freeze
 
       OTHERS_CITING_ME = %w[cites describes is-supplemented-by references compiles reviews requires has-metadata documents
@@ -24,7 +23,7 @@ module Stash
         @doi = doi&.downcase # had lots of problems from DataCite eventdata with an upcase and DOIs are supposed to be case insensitive
         @doi = doi[4..-1] if doi.start_with?('doi:')
         @base_url = BASE_URL
-        @email = EMAIL
+        @email = APP_CONFIG&.contact_email&.first
       end
 
       # response.headers -- includes :content_type=>"application/json;charset=UTF-8"
@@ -38,8 +37,8 @@ module Stash
 
         (array1 | array2) # returns the union of two sets, which deduplicates identical items, even if in the same original array
       rescue RestClient::ExceptionWithResponse => err
-        logger.error("#{Time.new} Could not get citations from DataCite for event data obj-id: #{DATACITE_URL}#{@doi}")
-        logger.error("#{Time.new} #{err}")
+        logger.error("#{Time.new.utc} Could not get citations from DataCite for event data obj-id: #{DATACITE_URL}#{@doi}")
+        logger.error("#{Time.new.utc} #{err}")
         []
       end
     end

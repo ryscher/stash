@@ -54,7 +54,7 @@ module StashEngine
     # When the status is published/embargoed send to Stripe and DataCite
     after_create :submit_to_datacite, :update_solr, :submit_to_stripe,
                  if: proc { |ca|
-                       !ca.resource.skip_datacite_update? && (ca.published? || ca.embargoed?) &&
+                       !ca.resource.skip_datacite_update && (ca.published? || ca.embargoed?) &&
                                  latest_curation_status_changed?
                      }
 
@@ -163,7 +163,7 @@ module StashEngine
             first_name: author.author_first_name,
             last_name: author.author_last_name,
             secret: SecureRandom.urlsafe_base64,
-            invited_at: Time.new
+            invited_at: Time.new.utc
           )
         ).deliver_now
       end

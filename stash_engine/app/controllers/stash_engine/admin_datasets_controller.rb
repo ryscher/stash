@@ -18,7 +18,7 @@ module StashEngine
     def index
       my_tenant_id = (current_user.role == 'admin' ? current_user.tenant_id : nil)
       @all_stats = Stats.new
-      @seven_day_stats = Stats.new(tenant_id: my_tenant_id, since: (Time.new - 7.days))
+      @seven_day_stats = Stats.new(tenant_id: my_tenant_id, since: (Time.new.utc - 7.days))
       @resources = build_table_query
       # If no records were found and a search parameter was specified, requery with
       # a ful text search to find partial word matches
@@ -77,20 +77,10 @@ module StashEngine
           decipher_curation_activity
           @resource.publication_date = @pub_date
           @resource.hold_for_peer_review = true if @status == 'peer_review'
-          @resource.peer_review_end_date = (Time.now + 6.months) if @status == 'peer_review'
-          begin
-            @resource.curation_activities << CurationActivity.create(user_id: current_user.id, status: @status,
-                                                                     note: params[:resource][:curation_activity][:note])
-            @resource.save
-          rescue Stash::Doi::DataciteError
-            # Datacite had a submission error (often due to them onlly hanging on to test DOIs for a short
-            # period of time), so disable datacite submission and try again
-            logger.error "Unable to send metadata to Datacite for #{@resource.identifier}"
-            @resource.update(skip_datacite_update: true)
-            CurationActivity.create(user_id: current_user.id, status: @status, resource_id: @resource.id,
-                                    note: params[:resource][:curation_activity][:note])
-            @resource.update(skip_datacite_update: false)
-          end
+          @resource.peer_review_end_date = (Time.now.utc + 6.months) if @status == 'peer_review'
+          @resource.curation_activities << CurationActivity.create(user_id: current_user.id, status: @status,
+                                                                   note: params[:resource][:curation_activity][:note])
+          @resource.save
           @resource.reload
         end
       end
