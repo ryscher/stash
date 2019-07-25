@@ -67,8 +67,6 @@ module StashEngine
       end
     end
 
-    # rubocop:disable Metrics/AbcSize
-    # rubocop:disable Metrics/MethodLength
     def curation_activity_change
       respond_to do |format|
         format.js do
@@ -85,8 +83,6 @@ module StashEngine
         end
       end
     end
-    # rubocop:enable Metrics/AbcSize
-    # rubocop:enable Metrics/MethodLength
 
     # show curation activities for this item
     def activity_log
