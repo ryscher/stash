@@ -24,7 +24,9 @@ module StashEngine
       # a ful text search to find partial word matches
       @resources = build_table_query(true) if @resources.empty? && params[:q].present? && params[:q].length > 4
       @publications = InternalDatum.where(data_type: 'publicationName').order(:value).pluck(:value).uniq
-      @pub_name = params[:publication_name]
+
+      @resources = Kaminari.paginate_array(@resources).page(@page).per(@page_size)
+
       respond_to do |format|
         format.html
         format.csv
@@ -140,7 +142,7 @@ module StashEngine
       resources = add_searches(query_obj: resources) unless full_table_scan
       resources = add_full_table_scan(query_obj: resources) if full_table_scan
       resources = add_filters(query_obj: resources)
-      resources.order(@sort_column.order).page(@page).per(@page_size)
+      resources.order(@sort_column.order)
     end
 
     def add_searches(query_obj:)
